@@ -134,6 +134,10 @@ class ChatService {
     const statuses = ['active', 'checked_out', 'upcoming'] as const;
     return statuses[Math.floor(Math.random() * statuses.length)];
   }
+
+  async getUnreadCount(userId: string): Promise<{unreadcount: number}> {
+    return await authenticatedApiRequest(`/chat/user/unread/${userId}`);
+  }
 }
 
 export const chatService = new ChatService();

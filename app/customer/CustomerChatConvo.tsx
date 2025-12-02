@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform, Keyboard, StyleSheet, Alert } from 'react-native';
-import { Text, ActivityIndicator } from 'react-native-paper';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@/contexts/AuthContext';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Send } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Chat, ChatMessage } from '../../data/chat-data';
 import { customerChatSocket, ChatMessage as SocketChatMessage } from '../../lib/chat-socket';
-import { chatService, ChatApiResponse } from '../../services/chatService';
-import { useAuth } from '@/contexts/AuthContext';
+import { ChatApiResponse, chatService } from '../../services/chatService';
 
 export default function ChatConversation() {
   const insets = useSafeAreaInsets();

@@ -1,39 +1,30 @@
+import ResortScreenMaps from '@/components/resort-screen/resort-screen-maps';
+import { useAuth } from '@/contexts/AuthContext';
+import { Amenity, amenityAPI } from '@/services/amenityService';
+import { Resort, resortAPI } from '@/services/resortService';
+import { Room, roomAPI } from '@/services/roomService';
+import { ResortStats, statsAPI } from '@/services/statsService';
+import { router, useLocalSearchParams } from 'expo-router';
+import {
+  ChevronLeft,
+  Heart,
+  MapPin,
+  Share2,
+  Star,
+  Users
+} from 'lucide-react-native';
 import * as React from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  Image, 
-  TouchableOpacity, 
-  Dimensions,
+import {
+  ActivityIndicator,
   Alert,
-  ActivityIndicator 
+  Dimensions,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  ChevronLeft, 
-  MapPin, 
-  Star, 
-  Heart, 
-  Share2, 
-  Phone, 
-  Mail, 
-  Calendar,
-  Users,
-  Wifi,
-  Car,
-  Coffee,
-  Waves,
-  MessageCircle
-} from 'lucide-react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { resortAPI, Resort } from '@/services/resortService';
-import { roomAPI, Room } from '@/services/roomService';
-import { chatService } from '@/services/chatService';
-import { useAuth } from '@/contexts/AuthContext';
-import { statsAPI, ResortStats } from '@/services/statsService';
-import { amenityAPI, Amenity } from '@/services/amenityService';
-import ResortScreenMaps from '@/components/resort-screen/resort-screen-maps';
 
 const { width } = Dimensions.get('window');
 
@@ -91,13 +82,23 @@ export default function ResortDetailsScreen() {
 
   const handleViewAllRooms = () => {
     // Navigate to customer room view
-    router.push({
-      pathname: '/customer/ViewRooms',
-      params: {
-        resortId: resortId as string,
-        resortName: resort?.resort_name
-      }
-    });
+    // router.push({
+    //   pathname: '/customer/ViewRooms',
+    //   params: {
+    //     resortId: resortId as string,
+    //     resortName: resort?.resort_name
+    //   }
+    // });
+      // Navigate to booking date selection screen
+        router.push({
+          pathname: '/customer/BookingDateScreen',
+          params: {
+            resortId: resortId as string,
+            resortName: resort?.resort_name || 'Resort',
+          }
+        });
+
+    
   };
 
   const handleBookRoom = (room: Room) => {

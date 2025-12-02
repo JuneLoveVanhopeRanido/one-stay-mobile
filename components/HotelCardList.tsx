@@ -1,22 +1,32 @@
+import customerResortAPI, { EnhancedResort } from "@/services/customerResortService";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
-import customerResortAPI, {
-  EnhancedResort,
-} from "@/services/customerResortService";
 
 const HotelCardList = () => {
   const router = useRouter();
   const [resorts, setResorts] = useState<EnhancedResort[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filter state
+  const [filter, setFilter] = useState({
+    minRating: 0,
+    minPrice: 0,
+    maxPrice: Infinity,
+  });
+
+  // Dropdown state for rating
+  const [showRatingDropdown, setShowRatingDropdown] = useState(false);
+  const ratingOptions = [0, 3, 4, 4.5];
 
   useEffect(() => {
     loadResorts();
@@ -41,6 +51,16 @@ const HotelCardList = () => {
     });
   };
 
+  // Filtered resorts
+  const filteredResorts = resorts.filter((resort) => {
+    const price = resort.price_per_night || 0;
+    return (
+      resort.rating >= filter.minRating &&
+      price >= filter.minPrice &&
+      price <= filter.maxPrice
+    );
+  });
+
   if (loading) {
     return (
       <View className="mt-2 px-5 py-10">
@@ -51,6 +71,7 @@ const HotelCardList = () => {
 
   return (
     <View className="mt-1 px-5">
+      {/* Header */}
       <View className="flex-row items-center justify-between mb-3">
         <Text
           style={{ fontSize: 18, fontFamily: "Roboto-Bold", color: "#111827" }}
@@ -73,13 +94,111 @@ const HotelCardList = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        className="-mx-1"
-      >
-        {resorts.length > 0 ? (
-          resorts.map((resort) => (
+      {/* Filters: rating + min/max price */}
+      <View className="flex-row mb-3 items-center gap-3">
+        {/* Rating dropdown */}
+        <View className="mr-3">
+          <TouchableOpacity
+            onPress={() => setShowRatingDropdown(!showRatingDropdown)}
+            style={{
+              padding: 8,
+              backgroundColor: "#E5E7EB",
+              borderRadius: 6,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ fontFamily: "Roboto-Medium", marginRight: 6 }}>
+              Rating: {filter.minRating}+
+            </Text>
+            <Ionicons
+              name={showRatingDropdown ? "chevron-up" : "chevron-down"}
+              size={16}
+              color="#111827"
+            />
+          </TouchableOpacity>
+          {showRatingDropdown && (
+            <View
+              style={{
+                position: "absolute",
+                top: 40,
+                backgroundColor: "#fff",
+                borderRadius: 6,
+                shadowColor: "#000",
+                shadowOpacity: 0.1,
+                shadowOffset: { width: 0, height: 2 },
+                shadowRadius: 4,
+                elevation: 3,
+                zIndex: 10,
+              }}
+            >
+              {ratingOptions.map((r) => (
+                <TouchableOpacity
+                  key={r}
+                  onPress={() => {
+                    setFilter({ ...filter, minRating: r });
+                    setShowRatingDropdown(false);
+                  }}
+                  style={{ padding: 10 }}
+                >
+                  <Text style={{ fontFamily: "Roboto-Medium" }}>{r}+</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Min Price */}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: "Roboto-Medium", marginBottom: 4 }}>
+            Min Price
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 1,
+              borderColor: "#d1d5db",
+              borderRadius: 6,
+              padding: 8,
+              fontFamily: "Roboto-Regular",
+            }}
+            keyboardType="numeric"
+            placeholder="₱0"
+            value={filter.minPrice === 0 ? "" : String(filter.minPrice)}
+            onChangeText={(text) => {
+              const num = parseInt(text.replace(/[^0-9]/g, "")) || 0;
+              setFilter((prev) => ({ ...prev, minPrice: num }));
+            }}
+          />
+        </View>
+
+        {/* Max Price */}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: "Roboto-Medium", marginBottom: 4 }}>
+            Max Price
+          </Text>
+          <TextInput
+            style={{
+              borderWidth: 1,
+              borderColor: "#d1d5db",
+              borderRadius: 6,
+              padding: 8,
+              fontFamily: "Roboto-Regular",
+            }}
+            keyboardType="numeric"
+            placeholder="Any"
+            value={filter.maxPrice === Infinity ? "" : String(filter.maxPrice)}
+            onChangeText={(text) => {
+              const num = parseInt(text.replace(/[^0-9]/g, "")) || Infinity;
+              setFilter((prev) => ({ ...prev, maxPrice: num }));
+            }}
+          />
+        </View>
+      </View>
+
+      {/* Resort list */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-1">
+        {filteredResorts.length > 0 ? (
+          filteredResorts.map((resort) => (
             <TouchableOpacity
               key={resort._id}
               className="mx-1.5 w-64"
@@ -209,7 +328,7 @@ const HotelCardList = () => {
         ) : (
           <View className="w-full py-10 items-center">
             <Text className="text-gray-500 text-center">
-              No resorts available at the moment
+              No resorts match your filters
             </Text>
           </View>
         )}

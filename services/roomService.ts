@@ -80,6 +80,25 @@ export const roomAPI = {
     }
   },
 
+  getAvailableRooms: async (resortId: string,startDate:string,endDate:string): Promise<{ resort: any; rooms: Room[] }> => {
+    try {
+      const response = await apiRequest(`/room/resort/available-rooms/${resortId}/${startDate}/${endDate}`);
+      return response;
+    } catch (error: any) {
+      console.error('Error fetching rooms by resort:', error);
+      
+      // Provide user-friendly error messages
+      if (error.status === 404) {
+        throw new Error('Resort not found or no rooms available.');
+      }
+      if (error.status === 400) {
+        throw new Error('Invalid resort ID. Please try again.');
+      }
+      
+      throw new Error(error.message || 'Failed to load resort rooms. Please try again later.');
+    }
+  },
+
   getRoomById: async (roomId: string): Promise<Room> => {
     try {
       const response = await apiRequest(`/room/${roomId}`);

@@ -1,6 +1,6 @@
 import io, { Socket } from 'socket.io-client';
 import { API_BASE_URL } from '../utils/api';
-import { getToken, getCurrentUser } from '../utils/auth';
+import { getCurrentUser, getToken } from '../utils/auth';
 
 // Unified interfaces
 export interface ChatMessage {

@@ -1,28 +1,28 @@
+import { Resort } from '@/services/resortService';
+import { Room, roomAPI } from '@/services/roomService';
+import { router, useLocalSearchParams } from 'expo-router';
+import {
+  Calendar,
+  CheckCircle,
+  ChevronLeft,
+  Users
+} from 'lucide-react-native';
 import * as React from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
   Alert,
-  ActivityIndicator 
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  ChevronLeft, 
-  Users,
-  Calendar,
-  Clock,
-  CheckCircle
-} from 'lucide-react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { roomAPI, Room } from '@/services/roomService';
-import { resortAPI, Resort } from '@/services/resortService';
 
 export default function CustomerViewRooms() {
-  const { resortId, resortName } = useLocalSearchParams<{
+  const { resortId, resortName,checkInDate,checkOutDate } = useLocalSearchParams<{
     resortId: string;
     resortName: string;
+    checkInDate:  string;
+    checkOutDate: string;
   }>();
   
   const [resort, setResort] = React.useState<Resort | null>(null);
@@ -32,14 +32,15 @@ export default function CustomerViewRooms() {
   React.useEffect(() => {
     if (resortId) {
       fetchRooms();
+      // getAvailableRooms();
     }
   }, [resortId]);
 
   const fetchRooms = async () => {
     try {
       setLoading(true);
-      const response = await roomAPI.getRoomsByResort(resortId as string);
-      setRooms(response.rooms.filter(room => room.status === 'available')); // Only show available rooms
+      const response = await roomAPI.getAvailableRooms(resortId as string,checkInDate,checkOutDate);
+      setRooms(response.rooms); // Only show available rooms
       setResort(response.resort);
     } catch (error) {
       console.error('Error fetching rooms:', error);
@@ -49,23 +50,63 @@ export default function CustomerViewRooms() {
     }
   };
 
+  const calculateNights = (startDate: string, endDate: string): number => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const diffTime = end.getTime() - start.getTime(); // ✅ convert Date → number
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
+  };
+
+  const calculateTotalPrice = (pricePerNight:any, startDate:string, endDate:string) => {
+    const nights = calculateNights(startDate, endDate);
+    return pricePerNight * nights;
+  };
+
+
+
+
+
   const handleBack = () => {
     router.back();
   };
 
+
   const handleBookRoom = (room: Room) => {
     // Navigate to booking date selection screen
+    // router.push({
+    //   pathname: '/customer/BookingDateScreen',
+    //   params: {
+    //     resortId: resortId as string,
+    //     roomId: room._id,
+    //     resortName: resort?.resort_name || 'Resort',
+    //     roomType: room.room_type,
+    //     pricePerNight: room.price_per_night.toString(),
+    //     capacity: room.capacity.toString()
+    //   }
+    // });
+
+    console.log('rooms',room);
+
     router.push({
-      pathname: '/customer/BookingDateScreen',
+      pathname: '/customer/BookingConfirmation',
       params: {
-        resortId: resortId as string,
+        resortId,
         roomId: room._id,
-        resortName: resort?.resort_name || 'Resort',
+        resortName,
         roomType: room.room_type,
         pricePerNight: room.price_per_night.toString(),
-        capacity: room.capacity.toString()
+        capacity: room.capacity.toString(),
+        checkInDate: checkInDate,
+        checkOutDate: checkOutDate,
+        totalPrice: calculateTotalPrice(room.price_per_night,checkInDate,checkOutDate),
+        nights: calculateNights(checkInDate,checkOutDate)
       }
     });
+
+    
   };
 
   return (

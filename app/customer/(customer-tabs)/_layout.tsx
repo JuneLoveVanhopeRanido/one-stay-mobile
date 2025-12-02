@@ -1,10 +1,14 @@
+import { UnreadProvider, useUnread } from '@/contexts/UnreadContext';
 import { Tabs } from "expo-router";
-import { Heart, MessageCircle, House, User } from "lucide-react-native";
+import { Heart, House, MessageCircle, User } from "lucide-react-native";
+import React from 'react';
+import { Text, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function TabLayout() {
+function TabsContent() {
   const insets = useSafeAreaInsets();
-  
+  const { unreadCount } = useUnread(); // ✅ inside provider
+
   return (
     <Tabs
       screenOptions={{
@@ -22,45 +26,50 @@ export default function TabLayout() {
           height: 60,
           position: 'absolute',
           elevation: 10,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.25,
-          shadowRadius: 10,
         },
-        tabBarLabelStyle: {
-          display: 'none', // Hide labels for cleaner look like the image
-        },
-        tabBarIconStyle: {
-          marginTop: 0,
-        },
+        tabBarLabelStyle: { display: 'none' },
       }}
     >
       <Tabs.Screen
         name="HomeScreen"
         options={{
-          title: "Explore",
-          tabBarIcon: ({ color, size }) => (
-            <House color={color} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) => <House color={color} size={size} />,
           headerShown: false,
         }}
       />
       <Tabs.Screen
         name="FavoritesScreen"
         options={{
-          title: "Wishlists",
-          tabBarIcon: ({ color, size }) => (
-            <Heart color={color} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) => <Heart color={color} size={size} />,
           headerShown: false,
         }}
       />
       <Tabs.Screen
         name="CustomerChatScreen"
         options={{
-          title: "Inbox",
           tabBarIcon: ({ color, size }) => (
-            <MessageCircle color={color} size={size} />
+            <View style={{ position: 'relative' }}>
+              <MessageCircle color={color} size={size} />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    right: -6,
+                    top: -4,
+                    backgroundColor: 'red',
+                    borderRadius: 10,
+                    width: 18,
+                    height: 18,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           ),
           headerShown: false,
         }}
@@ -68,13 +77,18 @@ export default function TabLayout() {
       <Tabs.Screen
         name="ProfileScreen"
         options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <User color={color} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
           headerShown: false,
         }}
       />
     </Tabs>
+  );
+}
+
+export default function Layout() {
+  return (
+    <UnreadProvider>
+      <TabsContent />
+    </UnreadProvider>
   );
 }

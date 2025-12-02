@@ -1,22 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  ChevronLeft,
-  Users,
-  DollarSign
-} from 'lucide-react-native';
-import { Calendar } from 'react-native-calendars';
+import { AvailabilityCheck } from '@/services/reservationService';
+import { Room } from '@/services/roomService';
 import { router, useLocalSearchParams } from 'expo-router';
-import { roomAPI, Room } from '@/services/roomService';
-import { reservationAPI, AvailabilityCheck } from '@/services/reservationService';
+import {
+  ChevronLeft
+} from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { Calendar } from 'react-native-calendars';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BookingDateScreen() {
   const { 
@@ -44,90 +42,90 @@ export default function BookingDateScreen() {
   const [availabilityResult, setAvailabilityResult] = useState<AvailabilityCheck | null>(null);
   const [markedDates, setMarkedDates] = useState<any>({});
 
-  useEffect(() => {
-    if (roomId) {
-      fetchRoomDetails();
-    }
-  }, [roomId]);
+  // useEffect(() => {
+  //   if (roomId) {
+  //     fetchRoomDetails();
+  //   }
+  // }, [roomId]);
 
-  useEffect(() => {
-    if (checkInDate && checkOutDate && checkInDate < checkOutDate) {
-      checkAvailability();
-    }
-  }, [checkInDate, checkOutDate]);
+  // useEffect(() => {
+  //   if (checkInDate && checkOutDate && checkInDate < checkOutDate) {
+  //     checkAvailability();
+  //   }
+  // }, [checkInDate, checkOutDate]);
 
   useEffect(() => {
     updateMarkedDates();
   }, [checkInDate, checkOutDate, bookedDates]);
 
-  const fetchRoomDetails = async () => {
-    try {
-      setLoading(true);
-      console.log('Fetching room details for roomId:', roomId);
+  // const fetchRoomDetails = async () => {
+  //   try {
+  //     setLoading(true);
+  //     console.log('Fetching room details for roomId:', roomId);
       
-      const [roomData, bookedDatesData] = await Promise.all([
-        roomAPI.getRoomById(roomId as string),
-        reservationAPI.getBookedDates(roomId as string)
-      ]);
+  //     const [roomData, bookedDatesData] = await Promise.all([
+  //       roomAPI.getRoomById(roomId as string),
+  //       reservationAPI.getBookedDates(roomId as string)
+  //     ]);
       
-      console.log('Room data received:', roomData);
-      console.log('Booked dates received:', bookedDatesData);
+  //     console.log('Room data received:', roomData);
+  //     console.log('Booked dates received:', bookedDatesData);
       
-      setRoom(roomData);
-      setBookedDates(bookedDatesData.booked_dates || []);
-    } catch (error) {
-      console.error('Error fetching room details:', error);
-      // Don't show error alert since we have fallbacks - just log it
-      console.log('Continuing with fallback data due to error');
-      // Set empty booked dates as fallback
-      setBookedDates([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     setRoom(roomData);
+  //     setBookedDates(bookedDatesData.booked_dates || []);
+  //   } catch (error) {
+  //     console.error('Error fetching room details:', error);
+  //     // Don't show error alert since we have fallbacks - just log it
+  //     console.log('Continuing with fallback data due to error');
+  //     // Set empty booked dates as fallback
+  //     setBookedDates([]);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const checkAvailability = async () => {
-    if (!checkInDate || !checkOutDate) return;
+  // const checkAvailability = async () => {
+  //   if (!checkInDate || !checkOutDate) return;
     
-    try {
-      setCheckingAvailability(true);
-      const startDate = checkInDate.toISOString().split('T')[0];
-      const endDate = checkOutDate.toISOString().split('T')[0];
+  //   try {
+  //     setCheckingAvailability(true);
+  //     const startDate = checkInDate.toISOString().split('T')[0];
+  //     const endDate = checkOutDate.toISOString().split('T')[0];
       
-      console.log('Checking availability for:', { roomId, startDate, endDate });
+  //     console.log('Checking availability for:', { roomId, startDate, endDate });
       
-      const result = await reservationAPI.checkAvailability(
-        roomId as string,
-        startDate,
-        endDate
-      );
+  //     const result = await reservationAPI.checkAvailability(
+  //       roomId as string,
+  //       startDate,
+  //       endDate
+  //     );
       
-      console.log('Availability result:', result);
-      setAvailabilityResult(result);
-    } catch (error) {
-      console.error('Error checking availability:', error);
-      // For now, assume room is available if we can't check
-      console.log('Assuming room is available due to check error');
-      setAvailabilityResult({
-        available: true,
-        room: {
-          id: roomId as string,
-          type: roomType as string,
-          capacity: parseInt(capacity as string),
-          price_per_night: parseFloat(pricePerNight as string),
-          resort: null
-        },
-        booking_details: {
-          start_date: checkInDate.toISOString().split('T')[0],
-          end_date: checkOutDate.toISOString().split('T')[0],
-          total_price: parseFloat(pricePerNight as string) * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)),
-          nights: Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
-        }
-      });
-    } finally {
-      setCheckingAvailability(false);
-    }
-  };
+  //     console.log('Availability result:', result);
+  //     setAvailabilityResult(result);
+  //   } catch (error) {
+  //     console.error('Error checking availability:', error);
+  //     // For now, assume room is available if we can't check
+  //     console.log('Assuming room is available due to check error');
+  //     setAvailabilityResult({
+  //       available: true,
+  //       room: {
+  //         id: roomId as string,
+  //         type: roomType as string,
+  //         capacity: parseInt(capacity as string),
+  //         price_per_night: parseFloat(pricePerNight as string),
+  //         resort: null
+  //       },
+  //       booking_details: {
+  //         start_date: checkInDate.toISOString().split('T')[0],
+  //         end_date: checkOutDate.toISOString().split('T')[0],
+  //         total_price: parseFloat(pricePerNight as string) * Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)),
+  //         nights: Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+  //       }
+  //     });
+  //   } finally {
+  //     setCheckingAvailability(false);
+  //   }
+  // };
 
   const updateMarkedDates = () => {
     const marked: any = {};
@@ -220,32 +218,38 @@ export default function BookingDateScreen() {
   };
 
   const handleContinue = () => {
-    if (!checkInDate || !checkOutDate || !availabilityResult) {
+    if (!checkInDate || !checkOutDate) {
       Alert.alert('Incomplete Selection', 'Please select both check-in and check-out dates');
       return;
     }
 
-    if (!availabilityResult.available) {
-      Alert.alert('Not Available', 'The selected dates are not available');
-      return;
-    }
-
-    // Navigate to booking confirmation
+    // Navigate to customer room view
     router.push({
-      pathname: '/customer/BookingConfirmation',
+      pathname: '/customer/ViewRooms',
       params: {
         resortId,
-        roomId,
         resortName,
-        roomType: availabilityResult.room.type,
-        capacity: availabilityResult.room.capacity.toString(),
-        pricePerNight: availabilityResult.room.price_per_night.toString(),
         checkInDate: checkInDate.toISOString().split('T')[0],
         checkOutDate: checkOutDate.toISOString().split('T')[0],
-        totalPrice: availabilityResult.booking_details.total_price.toString(),
-        nights: availabilityResult.booking_details.nights.toString()
       }
     });
+
+    // Navigate to booking confirmation
+    // router.push({
+    //   pathname: '/customer/BookingConfirmation',
+    //   params: {
+    //     resortId,
+    //     // roomId,
+    //     resortName,
+    //     // roomType: availabilityResult.room.type,
+    //     // capacity: availabilityResult.room.capacity.toString(),
+    //     // pricePerNight: availabilityResult.room.price_per_night.toString(),
+    //     checkInDate: checkInDate.toISOString().split('T')[0],
+    //     checkOutDate: checkOutDate.toISOString().split('T')[0],
+    //     // totalPrice: availabilityResult.booking_details.total_price.toString(),
+    //     // nights: availabilityResult.booking_details.nights.toString()
+    //   }
+    // });
   };
 
   const formatDate = (date: Date): string => {
@@ -268,26 +272,7 @@ export default function BookingDateScreen() {
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Room Info */}
-        {loading ? (
-          <View className="px-4 py-3 bg-white border-b border-gray-200">
-            <View className="h-5 w-48 bg-gray-200 rounded-lg mb-2" />
-            <View className="h-4 w-64 bg-gray-200 rounded-lg mb-2" />
-            <View className="h-5 w-32 bg-gray-200 rounded-lg" />
-          </View>
-        ) : (
-          <View className="px-4 py-3 bg-white border-b border-gray-200">
-            <Text style={{ fontSize: 17, fontFamily: 'Roboto-Bold', color: '#111827', marginBottom: 2 }}>
-              {roomType || room?.room_type}
-            </Text>
-            <Text style={{ fontSize: 12, fontFamily: 'Roboto', color: '#6B7280' }}>
-              {resortName} • Up to {capacity || room?.capacity} guests
-            </Text>
-            <Text style={{ fontSize: 18, fontFamily: 'Roboto-Bold', color: '#111827', marginTop: 6 }}>
-              ₱{(pricePerNight || room?.price_per_night)?.toLocaleString()}/night
-            </Text>
-          </View>
-        )}
+      
 
         {/* Date Selection Summary */}
         <View className="px-4 py-3">
@@ -409,9 +394,11 @@ export default function BookingDateScreen() {
       <View className="bg-white px-4 py-3 border-t border-gray-200">
         <TouchableOpacity
           onPress={handleContinue}
-          disabled={!checkInDate || !checkOutDate || !availabilityResult?.available || checkingAvailability}
+          // disabled={!checkInDate || !checkOutDate || !availabilityResult?.available || checkingAvailability}
+          
+          disabled={!checkInDate || !checkOutDate}
           className={`py-3 rounded-xl items-center ${
-            checkInDate && checkOutDate && availabilityResult?.available && !checkingAvailability
+            checkInDate && checkOutDate
               ? 'bg-[#1F2937]'
               : 'bg-gray-300'
           }`}

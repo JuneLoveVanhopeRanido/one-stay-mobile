@@ -1,4 +1,4 @@
-import { authenticatedApiRequest, apiRequest } from '../utils/api';
+import { apiRequest, authenticatedApiRequest } from '../utils/api';
 
 export interface Reservation {
   _id: string;

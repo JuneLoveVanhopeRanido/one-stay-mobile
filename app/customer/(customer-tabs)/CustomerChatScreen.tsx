@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, Alert, RefreshControl } from 'react-native';
-import { Text, ActivityIndicator } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { MessageCircle, Search } from 'lucide-react-native';
-import { Chat } from '../../../data/chat-data';
-import { customerChatSocket, ChatMessage, ChatUpdateData } from '../../../lib/chat-socket';
-import { chatService } from '../../../services/chatService';
 import { useAuth } from '@/contexts/AuthContext';
+import { router } from 'expo-router';
+import { MessageCircle } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Chat } from '../../../data/chat-data';
+import { ChatMessage, ChatUpdateData, customerChatSocket } from '../../../lib/chat-socket';
+import { chatService } from '../../../services/chatService';
+
+import { useUnread } from '../../../contexts/UnreadContext';
 
 export default function ChatScreen() {
   const [chats, setChats] = useState<Chat[]>([]);
@@ -15,6 +17,8 @@ export default function ChatScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
   const { user } = useAuth();
+
+const { unreadCount, setUnreadCount } = useUnread();
 
   useEffect(() => {
     initializeChat();
@@ -95,6 +99,11 @@ export default function ChatScreen() {
       
       const transformedChats = apiChats.map(chat => transformApiChatForCustomer(chat));
       
+      const totalUnreadCount = transformedChats.reduce(
+        (sum, chat) => sum + (chat.unread_count || 0),
+        0
+      );
+
       // Sort chats by latest message time (most recent first)
       const sortedChats = transformedChats.sort((a, b) => {
         return new Date(b.last_message_time).getTime() - new Date(a.last_message_time).getTime();
@@ -153,33 +162,26 @@ export default function ChatScreen() {
     return lastMessage.sender === 'owner' ? ownerMessages.length : 0;
   };
 
-  const updateChatWithNewMessage = (message: ChatMessage) => {
-    setChats(prevChats => {
-      const updatedChats = prevChats.map(chat => {
-        if (chat._id === message.chatId) {
-          const updatedMessages = [...chat.messages, {
-            _id: message._id,
-            sender: message.sender,
-            text: message.text,
-            timestamp: message.timestamp
-          }];
-          return {
-            ...chat,
-            messages: updatedMessages,
-            last_message: message.text,
-            last_message_time: message.timestamp,
-            unread_count: message.sender === 'owner' ? chat.unread_count + 1 : chat.unread_count
-          };
-        }
-        return chat;
-      });
-      
-      // Re-sort chats after adding new message to keep most recent at top
-      return updatedChats.sort((a, b) => {
-        return new Date(b.last_message_time).getTime() - new Date(a.last_message_time).getTime();
-      });
+const updateChatWithNewMessage = (message: ChatMessage) => {
+  setChats(prevChats => {
+    const updatedChats = prevChats.map(chat => {
+      if (chat._id === message.chatId) {
+        const newUnread = message.sender === 'owner' ? 1 : 0;
+        setUnreadCount(prev => prev + newUnread); // Increment global unread count
+
+        return {
+          ...chat,
+          messages: [...chat.messages, message],
+          last_message: message.text,
+          last_message_time: message.timestamp,
+          unread_count: chat.unread_count + newUnread,
+        };
+      }
+      return chat;
     });
-  };
+    return updatedChats.sort((a, b) => b.last_message_time.getTime() - a.last_message_time.getTime());
+  });
+};
 
   const handleChatUpdate = (update: ChatUpdateData) => {
     console.log('Received chat update:', update);
