@@ -1,5 +1,5 @@
 // API base URL from environment variables
-export const API_BASE_URL = "https://one-stay-server-e4p3.onrender.com//api";
+export const API_BASE_URL = "https://one-stay-server-e4p3.onrender.com/api";
 
 // Default headers for API requests
 export const defaultHeaders = {
