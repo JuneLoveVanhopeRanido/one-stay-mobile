@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "onestay",
     "userInterfaceStyle": "automatic",
+    "owner": "june_love",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
