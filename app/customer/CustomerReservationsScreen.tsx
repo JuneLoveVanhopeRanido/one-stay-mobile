@@ -1,11 +1,11 @@
-import * as React from 'react';
-import { View, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { Text, Card, Chip, TextInput, Button, ActivityIndicator } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { reservationAPI, type Reservation } from '@/services/reservationService';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import * as React from 'react';
+import { RefreshControl, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Button, Card, Chip, Text, TextInput } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CustomerReservationsScreen() {
   const router = useRouter();
@@ -64,9 +64,9 @@ export default function CustomerReservationsScreen() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(reservation => {
-        const resortName = reservation.room_id_populated?.resort_id.resort_name?.toLowerCase() || '';
-        const roomType = reservation.room_id_populated?.room_type?.toLowerCase() || '';
-        const location = reservation.room_id_populated?.resort_id.location?.address?.toLowerCase() || '';
+        const resortName = reservation.room_id?.resort_id.resort_name?.toLowerCase() || '';
+        const roomType = reservation.room_id?.room_type?.toLowerCase() || '';
+        const location = reservation.room_id?.resort_id.location?.address?.toLowerCase() || '';
         
         return resortName.includes(query) || 
                roomType.includes(query) || 
@@ -237,8 +237,8 @@ export default function CustomerReservationsScreen() {
 
             {/* Reservation Cards */}
             {filteredReservations.map((reservation) => {
-              const resort = reservation.room_id_populated?.resort_id;
-              const room = reservation.room_id_populated;
+              const resort = reservation.room_id?.resort_id;
+              const room = reservation.room_id;
               const nights = calculateNights(reservation.start_date, reservation.end_date);
 
               return (

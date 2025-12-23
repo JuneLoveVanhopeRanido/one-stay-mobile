@@ -1,6 +1,7 @@
 import ResortScreenMaps from '@/components/resort-screen/resort-screen-maps';
 import { useAuth } from '@/contexts/AuthContext';
 import { Amenity, amenityAPI } from '@/services/amenityService';
+import { customerFavoriteAPI } from '@/services/customerFavoriteService';
 import { Resort, resortAPI } from '@/services/resortService';
 import { Room, roomAPI } from '@/services/roomService';
 import { ResortStats, statsAPI } from '@/services/statsService';
@@ -29,7 +30,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 
 export default function ResortDetailsScreen() {
-  const { resortId } = useLocalSearchParams();
+  const { resortId, startDate,endDate } = useLocalSearchParams();
   const { user } = useAuth();
   const [resort, setResort] = React.useState<Resort | null>(null);
   const [rooms, setRooms] = React.useState<Room[]>([]);
@@ -37,6 +38,39 @@ export default function ResortDetailsScreen() {
   const [isFavorite, setIsFavorite] = React.useState(false);
   const [stats, setStats] = React.useState<ResortStats | null>(null);
   const [amenities, setAmenities] = React.useState<Amenity[]>([]);
+  
+  const [favoriteIds, setFavoriteIds] = React.useState<string[]>([]);
+  const userId = user?.id;
+
+    React.useEffect(() => {
+      loadFavorites();
+    }, []);
+  
+    const loadFavorites = async () => {
+      try {
+        if (!userId) return;
+        const favResorts = await customerFavoriteAPI.getMyFavorites(userId);
+        setFavoriteIds(favResorts.map((r: any) => r._id));
+      } catch (e) {
+        console.log("Error loading favorites:", e);
+      }
+    };
+
+    const toggleFavorite = async (resortId: string) => {
+      try {
+        if (favoriteIds.includes(resortId)) {
+          // remove
+          await customerFavoriteAPI.remove(resortId);
+          setFavoriteIds((prev) => prev.filter((id) => id !== resortId));
+        } else {
+          // add
+          await customerFavoriteAPI.add(resortId);
+          setFavoriteIds((prev) => [...prev, resortId]);
+        }
+      } catch (e) {
+        console.error("Favorite toggle error:", e);
+      }
+    };
 
   React.useEffect(() => {
     if (resortId) {
@@ -82,6 +116,19 @@ export default function ResortDetailsScreen() {
 
   const handleViewAllRooms = () => {
     // Navigate to customer room view
+    router.push({
+      pathname: '/customer/ViewRooms',
+      params: {
+        resortId: resortId as string,
+        fromScreen:"SeeAll"
+      }
+    });
+
+    
+  };
+
+  const handleBooking = () => {
+    // Navigate to customer room view
     // router.push({
     //   pathname: '/customer/ViewRooms',
     //   params: {
@@ -95,11 +142,15 @@ export default function ResortDetailsScreen() {
           params: {
             resortId: resortId as string,
             resortName: resort?.resort_name || 'Resort',
+            startDate,
+            endDate
           }
         });
 
     
   };
+
+
 
   const handleBookRoom = (room: Room) => {
     // Navigate directly to booking for this specific room
@@ -124,7 +175,7 @@ export default function ResortDetailsScreen() {
   const handleBookNow = () => {
     if (rooms.length > 0) {
       // Navigate to the room selection screen
-      handleViewAllRooms();
+      handleBooking();
     } else {
       Alert.alert('No Rooms', 'This resort has no rooms available for booking.');
     }
@@ -215,15 +266,20 @@ export default function ResortDetailsScreen() {
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
-                  onPress={handleFavorite}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(resort?._id as string);
+                  }}
                   className="w-9 h-9 bg-white/95 rounded-full items-center justify-center shadow-sm"
                 >
                   <Heart 
-                    color={isFavorite ? "#EF4444" : "#1F2937"} 
+                    color={favoriteIds.includes(resort?._id as string) ? "#DC2626" : "#1F2937"} 
                     size={18} 
-                    fill={isFavorite ? "#EF4444" : "transparent"}
+                    fill={favoriteIds.includes(resort?._id as string) ? "#DC2626" : "transparent"}
                   />
                 </TouchableOpacity>
+
+  
               </View>
             )}
           </View>
@@ -338,6 +394,7 @@ export default function ResortDetailsScreen() {
             </View>
           )}
 
+
           {/* Location Map */}
           {!loading && resort && (
             <ResortScreenMaps 
@@ -425,6 +482,102 @@ export default function ResortDetailsScreen() {
               </View>
             )}
           </View>
+
+          {/* Feedback Section */}
+{resort?.feedbacks && resort.feedbacks.length > 0 && (
+  <View className="mb-4">
+    <Text 
+      style={{ 
+        fontSize: 16, 
+        fontFamily: 'Roboto-Bold', 
+        color: '#111827', 
+        marginBottom: 8 
+      }}
+    >
+      Guest Feedback ({resort.feedbacks.length})
+    </Text>
+
+    <View className="gap-3">
+      {resort.feedbacks.map((fb) => (
+        <View 
+          key={fb._id} 
+          className="bg-white border border-gray-200 p-3 rounded-xl"
+        >
+          {/* User & Rating */}
+          <View className="flex-row justify-between items-center mb-1">
+            <Text 
+              style={{ 
+                fontSize: 14, 
+                fontFamily: 'Roboto-Bold', 
+                color: '#111827' 
+              }}
+            >
+              {fb.from_user.username}
+            </Text>
+
+            <View className="flex-row items-center">
+              <Star 
+                size={14} 
+                color="#F59E0B" 
+                fill="#F59E0B" 
+              />
+              <Text 
+                style={{ 
+                  marginLeft: 4, 
+                  fontSize: 13, 
+                  fontFamily: 'Roboto-Bold', 
+                  color: '#92400E' 
+                }}>
+                {fb.rating}
+              </Text>
+            </View>
+          </View>
+
+          {/* Room info */}
+          <Text 
+            style={{ 
+              fontSize: 12, 
+              fontFamily: 'Roboto', 
+              color: '#6B7280' 
+            }}
+          >
+            Stayed at: {fb.room.room_type}
+            {fb.room.room_number ? ` • Room ${fb.room.room_number}` : ''}
+          </Text>
+
+          {/* Comment */}
+          {fb.comment && (
+            <Text 
+              style={{ 
+                fontSize: 13, 
+                fontFamily: 'Roboto', 
+                color: '#374151', 
+                marginTop: 6, 
+                lineHeight: 18 
+              }}
+            >
+              {fb.comment}
+            </Text>
+          )}
+
+          {/* Date */}
+          <Text 
+            style={{ 
+              marginTop: 6, 
+              fontSize: 11, 
+              color: '#9CA3AF', 
+              fontFamily: 'Roboto' 
+            }}
+          >
+            {new Date(fb.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
+      ))}
+    </View>
+  </View>
+)}
+
+
 
         </View>
       </ScrollView>

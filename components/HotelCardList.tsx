@@ -1,5 +1,9 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { customerFavoriteAPI } from "@/services/customerFavoriteService";
 import customerResortAPI, { EnhancedResort } from "@/services/customerResortService";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -12,25 +16,79 @@ import {
   View,
 } from "react-native";
 
+
 const HotelCardList = () => {
   const router = useRouter();
   const [resorts, setResorts] = useState<EnhancedResort[]>([]);
   const [loading, setLoading] = useState(true);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const { user } = useAuth();
+
+  const userId = user?.id;
+
 
   // Filter state
-  const [filter, setFilter] = useState({
-    minRating: 0,
-    minPrice: 0,
-    maxPrice: Infinity,
-  });
+const [filter, setFilter] = useState({
+  minRating: 0,
+  minPrice: 0,
+  maxPrice: Infinity,
+  startDate: null as Date | null,
+  endDate: null as Date | null,
+});
 
   // Dropdown state for rating
   const [showRatingDropdown, setShowRatingDropdown] = useState(false);
-  const ratingOptions = [0, 3, 4, 4.5];
+  const ratingOptions = [0,1,2, 3, 4, 5];
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [availableResortIds, setAvailableResortIds] = useState<string[]>([]);
+
+
 
   useEffect(() => {
     loadResorts();
+    loadFavorites();
   }, []);
+
+  useEffect(() => {
+    
+    if (!filter.startDate || !filter.endDate) {
+      setAvailableResortIds([]);
+      return;
+    }
+
+    const fetchAvailableResorts = async () => {
+      try {
+        
+      setLoading(true);
+      if (!filter.startDate || !filter.endDate) return;
+       const { resortIds } = await customerResortAPI.getAvailableResorts({
+          startDate: formatDate(filter.startDate),
+          endDate: formatDate(filter.endDate),
+        });
+
+        setAvailableResortIds(resortIds);
+        console.log("resrot IDsssssssssssss",resortIds);
+      
+      setLoading(false);
+      } catch (err) {
+        console.error("Availability fetch failed:", err);
+      }
+    };
+
+  fetchAvailableResorts();
+}, [filter.startDate, filter.endDate]);
+
+
+  const loadFavorites = async () => {
+    try {
+      if (!userId) return;
+      const favResorts = await customerFavoriteAPI.getMyFavorites(userId);
+      setFavoriteIds(favResorts.map((r: any) => r._id));
+    } catch (e) {
+      console.log("Error loading favorites:", e);
+    }
+  };
 
   const loadResorts = async () => {
     try {
@@ -47,27 +105,60 @@ const HotelCardList = () => {
   const handleResortPress = (resortId: string) => {
     router.push({
       pathname: "/customer/ResortDetailsScreen",
-      params: { resortId },
+      params: { resortId,
+      startDate: filter.startDate ? filter.startDate.toISOString() : undefined,
+      endDate: filter.endDate ? filter.endDate.toISOString() : undefined,
+       },
     });
   };
 
-  // Filtered resorts
-  const filteredResorts = resorts.filter((resort) => {
-    const price = resort.price_per_night || 0;
-    return (
-      resort.rating >= filter.minRating &&
-      price >= filter.minPrice &&
-      price <= filter.maxPrice
-    );
-  });
+  const toggleFavorite = async (resortId: string) => {
+    try {
+      if (favoriteIds.includes(resortId)) {
+        // remove
+        await customerFavoriteAPI.remove(resortId);
+        setFavoriteIds((prev) => prev.filter((id) => id !== resortId));
+      } else {
+        // add
+        await customerFavoriteAPI.add(resortId);
+        setFavoriteIds((prev) => [...prev, resortId]);
+      }
+    } catch (e) {
+      console.error("Favorite toggle error:", e);
+    }
+  };
 
-  if (loading) {
-    return (
-      <View className="mt-2 px-5 py-10">
-        <ActivityIndicator size="large" color="#1F2937" />
-      </View>
-    );
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+
+  // Filtered resorts
+const filteredResorts = resorts.filter((resort) => {
+  const price = resort.price_per_night || 0;
+
+  if (!(resort.rating >= filter.minRating && price >= filter.minPrice && price <= filter.maxPrice)) {
+    return false;
   }
+
+  if (filter.startDate && filter.endDate) {
+    return availableResortIds.includes(resort._id);
+  }
+
+  return true;
+});
+
+
+  // if (loading) {
+  //   return (
+  //     <View className="mt-2 px-5 py-10">
+  //       <ActivityIndicator size="large" color="#1F2937" />
+  //     </View>
+  //   );
+  // }
 
   return (
     <View className="mt-1 px-5">
@@ -94,8 +185,114 @@ const HotelCardList = () => {
         </TouchableOpacity>
       </View>
 
+            <View className="flex-row mb-3 items-center gap-3">
+        {/* Start Date */}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: "Roboto-Medium", marginBottom: 4 }}>CHECK IN</Text>
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: "#d1d5db",
+              borderRadius: 6,
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 8,
+            }}
+          >
+            <TouchableOpacity
+              style={{ flex: 1, paddingVertical: 8 }}
+              onPress={() => setShowStartDatePicker(true)}
+            >
+              <Text>{filter.startDate ? filter.startDate.toLocaleDateString() : "Select"}</Text>
+            </TouchableOpacity>
+
+            {filter.startDate && (
+              <TouchableOpacity
+                onPress={() => setFilter(prev => ({ ...prev, startDate: null }))}
+                style={{
+                  marginLeft: 8,
+                  padding: 4,
+                }}
+              >
+                <Text style={{ fontSize: 16, color: "#9ca3af" }}>×</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {showStartDatePicker && (
+            <DateTimePicker
+              value={filter.startDate || new Date()}
+              mode="date"
+              display="default"
+              onChange={(event: DateTimePickerEvent, date?: Date) => {
+                setShowStartDatePicker(false);
+
+                // Check if the user pressed 'set' (iOS) or didn't cancel
+                if (event.type === "set" && date) {
+                  setFilter(prev => ({ ...prev, startDate: date }));
+                }
+
+                // If canceled, do nothing
+              }}
+            />
+
+          )}
+        </View>
+
+        {/* End Date */}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: "Roboto-Medium", marginBottom: 4 }}>CHECK OUT</Text>
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: "#d1d5db",
+              borderRadius: 6,
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 8,
+            }}
+          >
+            <TouchableOpacity
+              style={{ flex: 1, paddingVertical: 8 }}
+              onPress={() => setShowEndDatePicker(true)}
+            >
+              <Text>{filter.endDate ? filter.endDate.toLocaleDateString() : "Select"}</Text>
+            </TouchableOpacity>
+
+            {filter.endDate && (
+              <TouchableOpacity
+                onPress={() => setFilter(prev => ({ ...prev, endDate: null }))}
+                style={{
+                  marginLeft: 8,
+                  padding: 4,
+                }}
+              >
+                <Text style={{ fontSize: 16, color: "#9ca3af" }}>×</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {showEndDatePicker && (
+            <DateTimePicker
+              value={filter.endDate || new Date()}
+              mode="date"
+              display="default"
+              onChange={(event: DateTimePickerEvent, date?: Date) => {
+                setShowEndDatePicker(false);
+
+                if (event.type === "set" && date) {
+                  setFilter(prev => ({ ...prev, endDate: date }));
+                }
+              }}
+            />
+          )}
+        </View>
+      </View>
+
       {/* Filters: rating + min/max price */}
       <View className="flex-row mb-3 items-center gap-3">
+
+
         {/* Rating dropdown */}
         <View className="mr-3">
           <TouchableOpacity
@@ -197,7 +394,13 @@ const HotelCardList = () => {
 
       {/* Resort list */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-1">
-        {filteredResorts.length > 0 ? (
+
+        {loading? (
+          <View style={{ width: 300, justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator size="large" color="#1F2937" />
+    </View> 
+          ): 
+        filteredResorts.length > 0 ? (
           filteredResorts.map((resort) => (
             <TouchableOpacity
               key={resort._id}
@@ -215,9 +418,21 @@ const HotelCardList = () => {
                   className="w-full h-48 bg-gray-200"
                   resizeMode="cover"
                 />
-                <TouchableOpacity className="absolute top-2.5 right-2.5 bg-white/90 rounded-full p-1.5">
-                  <Ionicons name="heart-outline" size={18} color="#1F2937" />
+                <TouchableOpacity
+                  className="absolute top-2.5 right-2.5 bg-white/90 rounded-full p-1.5"
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(resort._id);
+                  }}
+                >
+                  <Ionicons
+                    name={favoriteIds.includes(resort._id) ? "heart" : "heart-outline"}
+                    color={favoriteIds.includes(resort?._id as string) ? "#DC2626" : "#1F2937"} 
+                    size={18} 
+                    fill={favoriteIds.includes(resort?._id as string) ? "#DC2626" : "transparent"}
+                  />
                 </TouchableOpacity>
+
                 {resort.rating >= 4.5 && resort.reviews >= 10 && (
                   <View className="absolute top-2.5 left-2.5 bg-white/95 px-2.5 py-1 rounded-lg shadow-sm">
                     <Text
@@ -257,7 +472,8 @@ const HotelCardList = () => {
                           marginLeft: 2,
                         }}
                       >
-                        {resort.rating.toFixed(1)}
+                        {Number(resort?.rating || 0).toFixed(1)}
+
                       </Text>
                     </View>
                   )}

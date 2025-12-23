@@ -1,4 +1,28 @@
-import { apiRequest, authenticatedApiRequest, API_BASE_URL } from '../utils/api';
+import { API_BASE_URL, apiRequest, authenticatedApiRequest } from '../utils/api';
+
+
+export interface ResortFeedback {
+  _id: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+
+  from_user: {
+    _id: string;
+    username: string;
+  };
+
+  to_user: {
+    _id: string;
+    username: string;
+  };
+
+  room: {
+    _id: string;
+    room_type: string;
+    room_number?: number;
+  };
+}
 
 export interface ResortData {
   resort_name: string;
@@ -9,6 +33,7 @@ export interface ResortData {
   };
   description?: string;
   image?: string;
+  
 }
 
 export interface ResortFormData {
@@ -35,6 +60,8 @@ export interface Resort {
   image?: string;
   createdAt: string;
   deleted: boolean;
+  
+  feedbacks?: ResortFeedback[];
 }
 
 export const resortAPI = {

@@ -1,12 +1,12 @@
-import * as React from 'react';
-import { View, Alert, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Avatar, Card, Chip, ActivityIndicator } from 'react-native-paper';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'expo-router';
 import { reservationAPI, type Reservation } from '@/services/reservationService';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { Settings } from 'lucide-react-native';
+import * as React from 'react';
+import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Avatar, Text } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
@@ -19,6 +19,7 @@ export default function ProfileScreen() {
       setLoading(true);
       const response = await reservationAPI.getUserReservations();
       setReservations(response.reservations);
+      console.log('REservationssss',response.reservations[0]);
     } catch (error) {
       console.error('Error fetching reservations:', error);
     } finally {
@@ -59,7 +60,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}  contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="px-4 pt-4 pb-4">
           <View className="items-center mb-6">
             <Avatar.Image 
@@ -99,36 +100,107 @@ export default function ProfileScreen() {
                   key={reservation._id}
                   className="mb-3 p-3 bg-gray-50 rounded-xl border border-gray-200"
                   activeOpacity={0.7}
-                  onPress={() => router.push({
-                    pathname: '/customer/CustomerReservationDetailsScreen',
-                    params: { reservationId: reservation._id }
-                  })}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/customer/CustomerReservationDetailsScreen",
+                      params: { reservationId: reservation._id },
+                    })
+                  }
                 >
-                  <View className="flex-row justify-between items-start mb-2">
-                    <Text style={{ fontSize: 15, fontFamily: 'Roboto-Bold', color: '#111827', flex: 1, marginRight: 8 }}>
-                      {reservation.room_id_populated?.resort_id.resort_name || 'Resort Name'}
-                    </Text>
-                    <View 
-                      className="px-2 py-1 rounded-lg"
-                      style={{ backgroundColor: getStatusColor(reservation.status) }}
-                    >
-                      <Text style={{ fontSize: 10, fontFamily: 'Roboto-Bold', color: '#FFFFFF', textTransform: 'uppercase' }}>
-                        {reservation.status}
+                  <View className="flex-row gap-3">
+                    
+                    {/* Resort IMAGE */}
+                    <Image
+                      source={{
+                        uri:
+                          reservation.room_id?.resort_id?.image ||
+                          "https://via.placeholder.com/100x80?text=No+Image",
+                      }}
+                      style={{
+                        width: 90,
+                        height: 80,
+                        borderRadius: 10,
+                      }}
+                    />
+
+                    {/* RIGHT SIDE CONTENT */}
+                    <View style={{ flex: 1 }}>
+
+                      {/* Resort Name + Status */}
+                      <View className="flex-row justify-between items-start mb-1">
+                        <Text
+                          style={{
+                            fontSize: 15,
+                            fontFamily: "Roboto-Bold",
+                            color: "#111827",
+                            flex: 1,
+                            marginRight: 8,
+                          }}
+                        >
+                          {reservation.room_id?.resort_id?.resort_name || "Resort Name"}
+                        </Text>
+
+                        <View
+                          className="px-2 py-1 rounded-lg"
+                          style={{ backgroundColor: getStatusColor(reservation.status) }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontFamily: "Roboto-Bold",
+                              color: "#FFFFFF",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {reservation.status}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Room Type + Number */}
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontFamily: "Roboto",
+                          color: "#6B7280",
+                          marginBottom: 2,
+                        }}
+                      >
+                        Room: {reservation.room_id?.room_type || "N/A"}{" "}
+                        {reservation.room_id?.room_number
+                          ? `• #${reservation.room_id.room_number}`
+                          : ""}
                       </Text>
+
+                      {/* Dates */}
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontFamily: "Roboto",
+                          color: "#9CA3AF",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {new Date(reservation.start_date).toLocaleDateString()} –{" "}
+                        {new Date(reservation.end_date).toLocaleDateString()}
+                      </Text>
+
+                      {/* Total Price */}
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontFamily: "Roboto-Bold",
+                          color: "#1F2937",
+                        }}
+                      >
+                        ₱{reservation.total_price.toLocaleString()}
+                      </Text>
+
                     </View>
                   </View>
-                  <Text style={{ fontSize: 12, fontFamily: 'Roboto', color: '#6B7280', marginBottom: 2 }}>
-                    Room: {reservation.room_id_populated?.room_type || 'N/A'}
-                  </Text>
-                  <Text style={{ fontSize: 12, fontFamily: 'Roboto', color: '#9CA3AF', marginBottom: 6 }}>
-                    {new Date(reservation.start_date).toLocaleDateString()} - {new Date(reservation.end_date).toLocaleDateString()}
-                  </Text>
-                  <Text style={{ fontSize: 14, fontFamily: 'Roboto-Bold', color: '#1F2937' }}>
-                    ₱{reservation.total_price.toLocaleString()}
-                  </Text>
                 </TouchableOpacity>
               ))}
-              
+
               {reservations.length > 3 && (
                 <TouchableOpacity 
                   className="py-2 mt-1"

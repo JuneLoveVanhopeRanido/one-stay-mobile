@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../utils/api';
+import { API_BASE_URL, authenticatedApiRequest } from '../utils/api';
 
 // Enhanced resort interface with customer data
 export interface EnhancedResort {
@@ -54,6 +54,20 @@ const customerResortAPI = {
       throw error;
     }
   },
+    getAvailableResorts: async (payload: {
+      startDate: string;
+      endDate: string;
+    }): Promise<{ resortIds: string[] }> => {
+      const res = await authenticatedApiRequest("/resort/available", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      return res; // { resortIds: string[] }
+    },
+
+  
 
   // Get resort by ID
   getResortById: async (resortId: string): Promise<BasicResort> => {

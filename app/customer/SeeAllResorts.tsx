@@ -1,21 +1,21 @@
-import * as React from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Image,
-  Dimensions,
-  RefreshControl,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronLeft, MapPin, Star, Heart } from "lucide-react-native";
-import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import customerResortAPI, {
   EnhancedResort,
 } from "@/services/customerResortService";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { ChevronLeft, MapPin, Star } from "lucide-react-native";
+import * as React from "react";
+import {
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 const itemWidth = (width - 48) / 2; // 2 columns with padding
@@ -138,7 +138,8 @@ export default function SeeAllResorts() {
                   marginLeft: 4,
                 }}
               >
-                {resort.rating.toFixed(1)} ({resort.reviews} reviews)
+                
+                {Number(resort?.rating || 0).toFixed(1)} ({resort.reviews} reviews)
               </Text>
             </View>
           )}

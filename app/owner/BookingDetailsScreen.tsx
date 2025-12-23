@@ -1,37 +1,30 @@
-import React, { useState, useEffect } from "react";
 import {
-  ScrollView,
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import {
-  ChevronLeft,
-  Calendar,
-  Clock,
-  MapPin,
-  User,
-  Phone,
-  Mail,
-  CheckCircle,
-  XCircle,
-  Star,
-  Bed,
-  Wifi,
-  Car,
-  Coffee,
-  Shield,
-} from "lucide-react-native";
-import { Card, Chip, Avatar, Divider } from "react-native-paper";
-import {
-  reservationAPI,
   Reservation,
   feedbackAPI,
+  reservationAPI,
 } from "@/services/reservationService";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  Calendar,
+  CheckCircle,
+  ChevronLeft,
+  MapPin,
+  Star,
+  XCircle
+} from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { Card, Divider } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BookingDetailsScreen() {
   const router = useRouter();
@@ -40,6 +33,8 @@ export default function BookingDetailsScreen() {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [feedbackEligibility, setFeedbackEligibility] = useState<any>(null);
   const [loadingFeedback, setLoadingFeedback] = useState(true);
+  const [showCancelModal, setShowCancelModal] = React.useState(false);
+  const [cancelReason, setCancelReason] = React.useState("");
 
   // Parse the reservation data from params
   const reservation: Reservation = JSON.parse(params.reservation as string);
@@ -161,40 +156,25 @@ export default function BookingDetailsScreen() {
     );
   };
 
-  const handleCancel = async () => {
-    Alert.alert(
-      "Cancel Reservation",
-      `Are you sure you want to cancel this reservation? This action cannot be undone.`,
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes, Cancel",
-          onPress: async () => {
-            try {
-              setProcessing(true);
-              setLoadingAction("cancel");
-              await reservationAPI.cancelReservation(reservation._id);
-              Alert.alert("Success", "Reservation cancelled successfully!", [
-                {
-                  text: "OK",
-                  onPress: () => router.back(),
-                },
-              ]);
-            } catch (error: any) {
-              console.error("Error cancelling reservation:", error);
-              Alert.alert(
-                "Error",
-                "Failed to cancel reservation. Please try again."
-              );
-            } finally {
-              setProcessing(false);
-              setLoadingAction(null);
-            }
-          },
-          style: "destructive",
-        },
-      ]
-    );
+  const handleCancelReservation = () => {
+    setShowCancelModal(true);
+  };
+
+  const submitCancel = async () => {
+    if (!cancelReason.trim()) {
+      Alert.alert("Error", "Please provide a reason for cancellation");
+      return;
+    }
+
+    try {
+      await reservationAPI.cancelReservation(reservation._id!,cancelReason);
+      Alert.alert("Success", "Reservation cancelled successfully");
+      setShowCancelModal(false);
+      router.back();
+    } catch (error) {
+      console.error("Error cancelling reservation:", error);
+      Alert.alert("Error", "Failed to cancel reservation");
+    }
   };
 
   const handleRateCustomer = () => {
@@ -240,7 +220,7 @@ export default function BookingDetailsScreen() {
     }
   };
 
-  const roomInfo = reservation.room_id_populated;
+  const roomInfo = reservation.room_id;
   const userInfo = reservation.user_id_populated;
   const resortInfo = roomInfo?.resort_id;
 
@@ -514,7 +494,7 @@ export default function BookingDetailsScreen() {
               </View>
 
               <TouchableOpacity
-                onPress={handleCancel}
+                onPress={handleCancelReservation}
                 disabled={processing}
                 className={`py-4 rounded-xl ${
                   loadingAction === "cancel" ? "bg-gray-300" : "bg-gray-600"
@@ -562,7 +542,7 @@ export default function BookingDetailsScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={handleCancel}
+                onPress={handleCancelReservation}
                 disabled={processing}
                 className={`py-4 rounded-xl ${
                   loadingAction === "cancel" ? "bg-gray-300" : "bg-gray-600"
@@ -646,6 +626,74 @@ export default function BookingDetailsScreen() {
           )}
         </View>
       </ScrollView>
+        <Modal
+          visible={showCancelModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowCancelModal(false)}
+        >
+  <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: '#fff',
+              padding: 20,
+              borderRadius: 12,
+              width: '100%',
+            }}
+          >
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
+              Cancel Reservation
+            </Text>
+            <Text style={{ marginBottom: 10 }}>
+              Please enter the reason for cancellation:
+            </Text>
+            <TextInput
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              placeholder="Reason..." 
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 8,
+                padding: 10,
+                marginBottom: 20,
+              }}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => setShowCancelModal(false)}
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 15,
+                  backgroundColor: '#ccc',
+                  borderRadius: 8,
+                }}
+              >
+                <Text>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={submitCancel}
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 15,
+                  backgroundColor: '#FF4D4F',
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+</Modal>
     </SafeAreaView>
   );
 }

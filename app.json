@@ -29,6 +29,9 @@
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECORD_AUDIO"
       ],
       "package": "com.katsuragik919.onestay"
@@ -72,6 +75,12 @@
       "eas": {
         "projectId": "4933b023-a2fe-482e-a6db-e4f9d4d07403"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/4933b023-a2fe-482e-a6db-e4f9d4d07403"
     }
   }
 }

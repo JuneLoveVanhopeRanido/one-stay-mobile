@@ -12,6 +12,7 @@ import {
 import * as React from 'react';
 import {
   Alert,
+  Image,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -20,18 +21,18 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CustomerViewRooms() {
-  const { resortId, resortName, checkInDate, checkOutDate } = useLocalSearchParams<{
+  const { resortId, resortName, checkInDate, checkOutDate,fromScreen} = useLocalSearchParams<{
     resortId: string;
     resortName: string;
     checkInDate: string;
     checkOutDate: string;
+    fromScreen:string;
   }>();
 
   const [resort, setResort] = React.useState<Resort | null>(null);
   const [rooms, setRooms] = React.useState<Room[]>([]);
   const [loading, setLoading] = React.useState(true);
 
-  // Collapsible state per room type
   const [expandedGroups, setExpandedGroups] = React.useState<Record<string, boolean>>({});
 
   React.useEffect(() => {
@@ -40,27 +41,38 @@ export default function CustomerViewRooms() {
     }
   }, [resortId]);
 
-  const fetchRooms = async () => {
-    try {
-      setLoading(true);
-      const response = await roomAPI.getAvailableRooms(resortId as string, checkInDate, checkOutDate);
-      setRooms(response.rooms);
-      setResort(response.resort);
+const fetchRooms = async () => {
+  try {
+    setLoading(true);
 
-      // Initialize collapsible groups
-      const initial: Record<string, boolean> = {};
-      response.rooms.forEach((r: Room) => {
-        if (!initial[r.room_type]) initial[r.room_type] = false;
-      });
-      setExpandedGroups(initial);
-
-    } catch (error) {
-      console.error('Error fetching rooms:', error);
-      Alert.alert('Error', 'Failed to load rooms. Please try again.');
-    } finally {
-      setLoading(false);
+    let response;
+    if (checkInDate && checkOutDate) {
+      // Fetch only available rooms for the given date range
+      response = await roomAPI.getAvailableRooms(resortId as string, checkInDate, checkOutDate);
+    } else {
+      // Fetch all rooms if no dates are provided
+      response = await roomAPI.getRoomsByResort(resortId as string);
     }
-  };
+
+    setRooms(response.rooms);
+    setResort(response.resort);
+    
+    console.log('allll',fromScreen)
+    // Initialize expanded groups for room types
+    const initial: Record<string, boolean> = {};
+    response.rooms.forEach((r: Room) => {
+      if (!initial[r.room_type]) initial[r.room_type] = false;
+    });
+    setExpandedGroups(initial);
+
+  } catch (error) {
+    console.error('Error fetching rooms:', error);
+    Alert.alert('Error', 'Failed to load rooms. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const calculateNights = (startDate: string, endDate: string): number => {
     const start = new Date(startDate);
@@ -76,26 +88,33 @@ export default function CustomerViewRooms() {
 
   const handleBack = () => router.back();
 
-  const handleBookRoom = (room: Room) => {
-    router.push({
-      pathname: '/customer/BookingConfirmation',
-      params: {
-        resortId,
-        roomId: room._id,
-        resortName,
-        roomType: room.room_type,
-        pricePerNight: room.price_per_night.toString(),
-        capacity: room.capacity.toString(),
-        checkInDate,
-        checkOutDate,
-        totalPrice: calculateTotalPrice(room.price_per_night, checkInDate, checkOutDate),
-        nights: calculateNights(checkInDate, checkOutDate)
+  const handleBookRoom = (room: Room,fromWhere:string) => {
+    if (fromWhere === "SeeAll") {
+      router.push({
+        pathname: "/customer/RoomDetailsScreen",
+        params: { roomId: room._id, resortId,resortName }
+      });
+    } else {
+        router.push({
+          pathname: '/customer/BookingConfirmation',
+          params: {
+            resortId,
+            roomId: room._id,
+            resortName,
+            roomType: room.room_type,
+            pricePerNight: room.price_per_night.toString(),
+            capacity: room.capacity.toString(),
+            checkInDate,
+            checkOutDate,
+            totalPrice: calculateTotalPrice(room.price_per_night, checkInDate, checkOutDate),
+            nights: calculateNights(checkInDate, checkOutDate)
+          }
+        });
       }
-    });
   };
 
-  // Group rooms by room_type
   const groupedRooms: Record<string, Room[]> = rooms.reduce((acc, room) => {
+    if (room.status !== "available") return acc;
     if (!acc[room.room_type]) acc[room.room_type] = [];
     acc[room.room_type].push(room);
     return acc;
@@ -136,7 +155,6 @@ export default function CustomerViewRooms() {
           ))}
         </ScrollView>
       ) : rooms.length === 0 ? (
-        // NO ROOMS SCREEN
         <View className="flex-1 justify-center items-center px-5">
           <Calendar size={40} color="#6B7280" />
           <Text style={{ fontSize: 18, fontFamily: 'Roboto-Bold', marginTop: 10 }}>
@@ -151,7 +169,6 @@ export default function CustomerViewRooms() {
         </View>
 
       ) : (
-        // GROUPED LIST
         <ScrollView className="flex-1 px-4 py-4">
 
           {Object.keys(groupedRooms).map((roomType) => {
@@ -177,17 +194,35 @@ export default function CustomerViewRooms() {
                   )}
                 </TouchableOpacity>
 
-                {/* Room List inside group */}
+                {/* Room List */}
                 {isOpen && (
                   <View className="mt-2">
+
                     {groupedRooms[roomType].map((room) => (
                       <TouchableOpacity
                         key={room._id}
-                        onPress={() => handleBookRoom(room)}
-                        className="bg-white border border-gray-200 rounded-xl p-4 mb-2"
+                        onPress={() => handleBookRoom(room, fromScreen)}
+
+                        className="bg-white border border-gray-200 rounded-xl p-4 mb-3"
+                        activeOpacity={0.7}
                       >
-                        <View className="flex-row justify-between">
-                          <View>
+
+                        {/* IMAGE + DETAILS */}
+                        <View className="flex-row gap-3">
+                          <Image
+                            source={{ uri: room.image }}
+                            style={{
+                              width: 90,
+                              height: 70,
+                              borderRadius: 10,
+                            }}
+                          />
+
+                          <View className="flex-1">
+                            <Text className="text-base font-bold text-gray-900 mb-1">
+                              Room {room.room_number ?? '—'} {room.status}
+                            </Text>
+
                             <View className="flex-row items-center mb-1">
                               <Users size={14} color="#6B7280" />
                               <Text className="ml-2 text-xs text-gray-600">
@@ -203,15 +238,17 @@ export default function CustomerViewRooms() {
                             </View>
                           </View>
 
-                          <View className="items-end">
+                          <View className="items-end justify-center">
                             <Text className="text-lg font-bold text-gray-900">
                               ₱{room.price_per_night.toLocaleString()}
                             </Text>
                             <Text className="text-xs text-gray-500">/night</Text>
                           </View>
                         </View>
+
                       </TouchableOpacity>
                     ))}
+
                   </View>
                 )}
 

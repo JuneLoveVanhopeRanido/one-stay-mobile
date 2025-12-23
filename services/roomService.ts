@@ -20,6 +20,8 @@ export interface Room {
     image?: string;
   };
   booked_dates?: string[];
+  image?:string;
+  room_number:number;
 }
 
 export interface RoomAvailability {

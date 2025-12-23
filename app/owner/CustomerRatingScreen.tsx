@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, Alert, ActivityIndicator, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Star, Send, User, Calendar, MapPin } from 'lucide-react-native';
-import { Card, Avatar, Chip, Divider } from 'react-native-paper';
-import { feedbackAPI, FeedbackRequest, Reservation } from '@/services/reservationService';
 import { useAuth } from '@/contexts/AuthContext';
+import { feedbackAPI, FeedbackRequest, Reservation } from '@/services/reservationService';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowLeft, Calendar, MapPin, Send, Star } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Avatar, Card, Chip, Divider } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CustomerRatingScreen() {
   const router = useRouter();
@@ -84,7 +84,7 @@ export default function CustomerRatingScreen() {
     }
   };
 
-  const roomInfo = reservation.room_id_populated;
+  const roomInfo = reservation.room_id;
   const userInfo = reservation.user_id_populated;
   const resortInfo = roomInfo?.resort_id;
 

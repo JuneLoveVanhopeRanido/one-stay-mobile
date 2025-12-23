@@ -23,7 +23,9 @@ export default function BookingDateScreen() {
     resortName, 
     roomType, 
     pricePerNight, 
-    capacity 
+    capacity,
+    startDate,
+    endDate
   } = useLocalSearchParams<{
     resortId: string;
     roomId: string;
@@ -31,6 +33,8 @@ export default function BookingDateScreen() {
     roomType: string;
     pricePerNight: string;
     capacity: string;
+    startDate:string;
+    endDate:string;
   }>();
 
   const [room, setRoom] = useState<Room | null>(null);
@@ -47,6 +51,21 @@ export default function BookingDateScreen() {
   //     fetchRoomDetails();
   //   }
   // }, [roomId]);
+
+  
+useEffect(() => {
+  if (startDate) {
+    const start = new Date(startDate);
+    if (!isNaN(start.getTime())) setCheckInDate(start);
+  }
+  if (endDate) {
+    const end = new Date(endDate);
+    if (!isNaN(end.getTime())) setCheckOutDate(end);
+  }
+
+  console.log("datesssss",startDate,endDate);
+}, [startDate, endDate]);
+
 
   // useEffect(() => {
   //   if (checkInDate && checkOutDate && checkInDate < checkOutDate) {

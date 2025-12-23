@@ -3,7 +3,7 @@ import { apiRequest, authenticatedApiRequest } from '../utils/api';
 export interface Reservation {
   _id: string;
   user_id: string;
-  room_id: string;
+  // room_id: string;
   start_date: string;
   end_date: string;
   total_price: number;
@@ -11,11 +11,13 @@ export interface Reservation {
   deleted: boolean;
   createdAt: string;
   updatedAt: string;
-  room_id_populated?: {
+  reason:string;
+  room_id?: {
     _id: string;
     room_type: string;
     capacity: number;
     price_per_night: number;
+    room_number:number;
     resort_id: {
       _id: string;
       resort_name: string;
@@ -26,6 +28,7 @@ export interface Reservation {
       };
       image?: string;
     };
+
   };
   user_id_populated?: {
     _id: string;
@@ -189,6 +192,7 @@ export const reservationAPI = {
         ? `/reservation/my-reservations?status=${status}`
         : '/reservation/my-reservations';
       const response = await authenticatedApiRequest(url);
+
       return response;
     } catch (error) {
       console.error('Error fetching user reservations:', error);
@@ -253,17 +257,23 @@ export const reservationAPI = {
   },
 
   // Cancel reservation (customer only)
-  cancelReservation: async (reservationId: string): Promise<{ message: string }> => {
-    try {
-      const response = await authenticatedApiRequest(`/reservation/${reservationId}`, {
-        method: 'DELETE'
-      });
-      return response;
-    } catch (error) {
-      console.error('Error cancelling reservation:', error);
-      throw error;
-    }
-  },
+cancelReservation: async (reservationId: string, reason: string): Promise<{ message: string }> => {
+  try {
+    const response = await authenticatedApiRequest(`/reservation/${reservationId}`, {
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason })  // MUST be an object
+    });
+    
+          console.log('cancelled@@@@@@@',response);
+    return response;
+    
+  } catch (error) {
+    console.error('Error cancelling reservation:', error);
+    throw error;
+  }
+},
+
 
   // Get reservation by ID
   getReservationById: async (reservationId: string): Promise<{ reservation: Reservation }> => {

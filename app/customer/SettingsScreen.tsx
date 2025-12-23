@@ -1,19 +1,17 @@
-import * as React from "react";
-import { View, Alert, ScrollView, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Text } from "react-native-paper";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "expo-router";
 import {
   ChevronLeft,
-  User,
-  Bell,
-  Lock,
-  HelpCircle,
-  FileText,
-  LogOut,
   ChevronRight,
+  FileText,
+  Lock,
+  LogOut,
+  User
 } from "lucide-react-native";
+import * as React from "react";
+import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
+import { Text } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
@@ -55,11 +53,11 @@ export default function SettingsScreen() {
     {
       title: "Support",
       items: [
-        {
-          icon: HelpCircle,
-          label: "Help Center",
-          onPress: () => Alert.alert("Help Center", "Help center coming soon!"),
-        },
+        // {
+        //   icon: HelpCircle,
+        //   label: "Help Center",
+        //   onPress: () => Alert.alert("Help Center", "Help center coming soon!"),
+        // },
         {
           icon: FileText,
           label: "Terms & Privacy",

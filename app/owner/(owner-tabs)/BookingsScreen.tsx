@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, Alert, ActivityIndicator, RefreshControl, TextInput } from 'react-native';
-import { Card, Chip, FAB, Avatar } from 'react-native-paper';
-import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, Eye, ChevronRight, Search, X, ChevronDown, ChevronUp} from 'lucide-react-native';
-import { reservationAPI, Reservation, PaginationInfo, FilterInfo } from '@/services/reservationService';
 import { useAuth } from '@/contexts/AuthContext';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { PaginationInfo, Reservation, reservationAPI } from '@/services/reservationService';
 import { useRouter } from 'expo-router';
+import { Calendar, CheckCircle, ChevronDown, Clock, Search, X, XCircle } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Card, Chip } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BookingsScreen() {
   const { user } = useAuth();
@@ -237,7 +237,7 @@ export default function BookingsScreen() {
           ) : (
             filteredReservations.map((reservation) => {
               const StatusIcon = getStatusIcon(reservation.status);
-              const roomInfo = reservation.room_id_populated;
+              const roomInfo = reservation.room_id;
               const userInfo = reservation.user_id_populated;
               const resortInfo = roomInfo?.resort_id;
 
